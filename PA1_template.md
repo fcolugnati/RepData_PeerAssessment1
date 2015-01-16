@@ -6,7 +6,10 @@ Assignment 1
 ##Fernando Colugnati
 
 
+This is the first peer reviewed assignement for the "Reproducible Research" at Coursera, January, 2015.
 
+##Loading and preprocessing the data
+Just unziped and loaded data using simple read.cvs function. Also, packages that should be installed are listed. In some tests I could not point the mirror correctely, resulting error.
 
 
 ```r
@@ -20,6 +23,10 @@ a<-read.csv("activity.csv")
 #install.packages("doBy")
 ```
 
+
+##What is mean total number of steps taken per day?
+
+Fisrts table presents simple statistics for the whole dataset, and also descritptivestatistics for the total number of steps in each day.
 
 
 ```r
@@ -58,6 +65,10 @@ ldesc
 ##   5.724 295.900 354.600 332.800 391.000 505.200       8
 ```
 
+The mean and median for the total daily steps are 1.077 &times; 10<sup>4</sup> and 1.076 &times; 10<sup>4</sup>, respectively. Also, the log of the same variable plus one is described.
+
+Histograms bellow presents the distribution for the total number of daily steps.
+
 
 ```r
 par(mfrow = c(1, 2))
@@ -67,20 +78,39 @@ hist(tapply(log(a$steps+1), a$date, sum), main=" ", xlab="Log(total steps + 1)")
 
 ![plot of chunk ploting steps by interval](figure/ploting steps by interval-1.png) 
 
+
+## What is the average daily activity pattern?
+
+
+
 ```r
 c <- aggregate(steps ~ interval, data=a, FUN=mean)
 attach(c)
+```
+
+```
+## The following objects are masked from c (position 12):
+## 
+##     interval, steps
+```
+
+```r
 par(mfrow = c(1, 1))
 plot(c, type="l")
 ```
 
-![plot of chunk ploting steps by interval](figure/ploting steps by interval-2.png) 
+![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1-1.png) 
 
 ```r
 c <- c[order(-steps),]
 ```
 
-The maximun average number of steps is 206 at interval 835
+Across all days, considering the same 5 minutes interval, it is possible to note a activity in the first intervals, maybe during the morning, reaching the maximun average number of steps at  interval 835, reaching arround 206 steps.
+
+
+##Imputing missing values
+
+I am using functions from plyr and Hmisc packages, that allows to input values for NA's easily, as follows. I used two strategies, considering the interval means and medians for the number of steps.
 
 
 ```r
@@ -90,8 +120,8 @@ require(Hmisc)
 a <- ddply(a, "interval", mutate, steps.mean = impute(steps, mean))
 a <- ddply(a, "interval", mutate, steps.median = impute(steps, median))
 
-require(xtable)
-xt <- summary(a)
+
+summary(a)
 ```
 
 ```
@@ -100,10 +130,6 @@ xt <- summary(a)
 ## 
 ## 
 ##  8 values imputed to 0
-```
-
-```r
-print(xt, type = "html")
 ```
 
 ```
@@ -125,6 +151,20 @@ print(xt, type = "html")
 ## 
 ```
 
+```r
+par(mfrow = c(1, 2))
+hist(tapply(a$steps.mean, a$date, sum), main="Daily steps - mean inputed", xlab="Total daily steps")
+hist(tapply(a$steps.median, a$date, sum), main="Daily steps - median inputed", xlab="Total daily steps")
+```
+
+![plot of chunk input missings](figure/input missings-1.png) 
+
+
+There are -1 missing values in the original dataset.  Apparently, there are no big impacts regarding mean and median, but the 3rd quartile varies. As can be noted in histograms, the medians increased the number of 0 (zeroes). 
+
+##Are there differences in activity patterns between weekdays and week- ends?
+
+Follows how I created the factor. I have to use a setup so I can have weekdays in English format.
 
 
 ```r
@@ -162,6 +202,8 @@ table(a$weekday_f)
 ##     4608    12960
 ```
 
+Regarding differences between weekdays and weekends, plots bellow, as well as simple statistical tests, shows that this guys walks a little bit more during weekends. In avarage or in median, he walks 7 steps more during weekends.
+
 
 
 ```r
@@ -173,7 +215,7 @@ plot(aggregate(steps.mean ~ interval, data=a_weekend, FUN=mean), type="l", sub="
 plot(aggregate(steps.mean ~ interval, data=a_weekday, FUN=mean), type="l", sub="weekday")
 ```
 
-![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1-1.png) 
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png) 
 
 ```r
 par(mfrow = c(1, 2))
@@ -181,7 +223,7 @@ boxplot(a$steps.mean ~ a$weekday,data=a, main="Steps Distribution" , ylab="Numbe
 boxplot(log(steps.mean+1) ~ weekday,data=a , ylab="Log(Number of steps +1)")
 ```
 
-![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1-2.png) 
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-2.png) 
 
 ```r
 par(mfrow = c(1, 2))
@@ -189,18 +231,11 @@ boxplot(a$steps~a$weekday_f,data=a, main="Steps Distribution" , ylab="Number of 
 boxplot(log(steps+1)~weekday_f,data=a, ylab="Log(Number of steps +1)")
 ```
 
-![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1-3.png) 
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-3.png) 
 
 
 ```r
 library(doBy)
-```
-
-```
-## Warning: package 'doBy' was built under R version 3.1.2
-```
-
-```r
 summaryBy(steps.mean + steps.median ~ weekday_f, data = a, 
           FUN = function(x) { c(m = mean(x), s = sd(x), md = median(x)) } )
 ```
@@ -275,4 +310,7 @@ t.test(log(a_weekend$steps.mean+1),log(a_weekday$steps.mean+1))
 ## mean of x mean of y 
 ##  1.527863  1.319508
 ```
+
+Very funny and usefull assignment! Thank you, I hope I could achieve the expected performance.
+
 
